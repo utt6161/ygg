@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./db/db.db"
+}
+
+// model User {
+//   id Int @id @default( autoincrement() ),
+//   patreonId String,
+//   name String,
+//   uuid String @default( uuid() ),
+//   characters Character[]
+// }
+
+// model Character {
+//   id Int @id @default( autoincrement() ),
+//   uuid String @default( uuid() ),
+//   name String,
+//   owner User @relation(fields: [ownerId], references: [id]),
+//   ownerId Int
+// }
+
+// model Token {
+//   id Int @id @default( autoincrement() ),
+//   clientToken String,
+//   accessToken String,
+//   createdAt Int @default(now())
+
+model Player {
+  id        Int     @id @default(autoincrement())
+  patreonId String
+  name      String
+  uuid      String
+  createdAt Int     @default(dbgenerated("(strftime('%s','now'))"))
+  tokens    Token[]
+}
+
+model Token {
+  id          Int    @id @default(autoincrement())
+  clientToken String
+  accessToken String
+  createdAt   Int    @default(dbgenerated("(strftime('%s','now'))"))
+  player      Player @relation(fields: [playerId], references: [id])
+  playerId    Int
+}
+
+model Pending {
+  id          Int    @id @default(autoincrement())
+  clientToken String
+  accessToken String
+  createdAt   Int    @default(dbgenerated("(strftime('%s','now'))"))
+}
+
+model Whitelist {
+  id        Int    @id @default(autoincrement())
+  patreonId String
+  createdAt Int    @default(dbgenerated("(strftime('%s','now'))"))
+}
