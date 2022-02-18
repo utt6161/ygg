@@ -4,5 +4,5 @@ import * as crypto from 'crypto'
 import { createOkAuthPayload, createErrorPayload } from "../utils/payloads.js"
 
 export const authPatreon = (req, res, next) => {
-    const isGitWatcherWorking = "WHO KNOWS?"
+    const butWhatAboutNow = "????"
 }
