@@ -3,7 +3,8 @@ import { v4 as uuidv4, v5 as uuidv5, validate as uuidValidate } from 'uuid';
 import * as crypto from 'crypto'
 import { createOkAuthPayload, createErrorPayload } from "../utils/payloads.js"
 import { validationResult } from "express-validator"
-import { PrismaClient } from "@prisma/client"
+import Prisma from '@prisma/client'
+const { PrismaClient } = Prisma
 
 const CLIENT_ID = process.env.CLIENT_ID
 const CLIENT_SECRET = process.env.CLIENT_SECRET
