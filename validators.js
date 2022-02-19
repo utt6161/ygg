@@ -1,6 +1,6 @@
 import { query } from "express-validator"
 import { v4 } from "uuid"
-import { createErrorPayload } from "./utils/payloads"
+import { createErrorPayload } from "./utils/payloads.js"
 
 export const authChecks = [
     query("code").exists({
