@@ -26,6 +26,7 @@ import mongodb from 'mongodb'
 import { oAuthHandler } from "./controllers/patreonController.js"
 import { ygg, wl } from "./db/db.js"
 import { authPatreon } from "./controllers/auth.js"
+import { authChecks } from "./validators.js"
 
 console.log("Starting yet again.");
 console.log("============================================")
@@ -116,7 +117,7 @@ app.get("/", (req, res) => {
     res.end("you shouldnt be here, bud")
 })
 
-app.get(process.env.REDIRECT_PATH, oAuthHandler)
+app.get(process.env.REDIRECT_PATH, authChecks, authPatreon)
 
 
 app.post("/auth/refresh", )
