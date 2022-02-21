@@ -34,27 +34,31 @@ datasource db {
 
 model Player {
   id        Int     @id @default(autoincrement())
-  patreonId String
-  name      String
-  uuid      String
+  patreonId String  @unique
+  name      String  @unique
+  uuid      String  @unique
   createdAt Int     @default(dbgenerated("(strftime('%s','now'))"))
   tokens    Token[]
 }
 
 model Token {
   id          Int    @id @default(autoincrement())
-  clientToken String
-  accessToken String
+  clientToken String @unique
+  accessToken String @unique
   createdAt   Int    @default(dbgenerated("(strftime('%s','now'))"))
   player      Player @relation(fields: [playerId], references: [id])
   playerId    Int
+  status      Pending?
 }
 
 model Pending {
-  id          Int    @id @default(autoincrement())
-  clientToken String
-  accessToken String
-  createdAt   Int    @default(dbgenerated("(strftime('%s','now'))"))
+  id              Int    @id @default(autoincrement())
+  token           Token  @relation(fields: [tokenId], references: [id])
+  tokenId         Int
+  selectedProfile String @unique
+  ip              String
+  serverId        String 
+  createdAt       Int    @default(dbgenerated("(strftime('%s','now'))"))
 }
 
 model Whitelist {

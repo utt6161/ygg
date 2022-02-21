@@ -15,10 +15,13 @@ const prisma = new PrismaClient()
 export const authPatreon = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        res.status(500).send(errors.array[0])
+        console.log(`got some validation errors`)
+        console.log(errors)
+        return res.status(500).send(errors.array()[0].msg)
     }
-    const oAuthGrantCode = request.query.get("code")
-    const clientToken = request.query.get("state")
+    const oAuthGrantCode = req.query.code
+    const clientToken = req.query.state
+    console.log(`Recieved ${oAuthGrantCode} and ${clientToken}`)
     patreonOAuthClient
         .getTokens(oAuthGrantCode, redirectURL)
         .then(tokensResponse => {
@@ -27,14 +30,14 @@ export const authPatreon = (req, res, next) => {
         })
         .then(({ store }) => {
             const userData = store.findAll('user').map(user => user.serialize())[0];
-            if (!/^[a-zA-Z0-9_]{3,16}$/.test(userData.data.attributes.full_name.replaceAll(' ', '')) &&
-                !/^[a-zA-Z0-9]*_?[a-zA-Z0-9]*$/.test(userData.data.attributes.full_name.replaceAll(' ', ''))) {
+            if (!/^[a-zA-Z0-9_]{3,16}$/.test(userData.data.attributes.full_name.replace(/ /g, '')) &&
+                !/^[a-zA-Z0-9]*_?[a-zA-Z0-9]*$/.test(userData.data.attributes.full_name.replace(/ /g, ''))) {
 
-                console.log(`User ${userData.data.attributes.full_name.replaceAll(' ', '')} attempted to log in, denied by name-policy`)
-                res.status(500).send(createErrorPayload(
+                console.log(`User ${userData.data.attributes.full_name.replace(/ /g, '')} attempted to log in, denied by name-policy`)
+                return res.status(500).send(createErrorPayload(
                     "IllegalArgumentException",
                     "Имя пользователя не соответствует политике имен"))
-
+                
             } else {
                 prisma.whitelist.findFirst({
                     where: {
@@ -46,6 +49,7 @@ export const authPatreon = (req, res, next) => {
                     // who doesnt have an active pledge
                     // switch it to != 0 for the opposite effect
                     if (userData.data.relationships.pledges.data.length == 0 || wlPlayer) {
+                        console.log(`User ${userData.data.attributes.full_name.replace(/ /g, '')} does have a pledge or is whitelisted, proceeding...`)
                         prisma.player.findFirst({
                             where: {
                                 patreonId: userData.data.id
@@ -55,9 +59,10 @@ export const authPatreon = (req, res, next) => {
                             }
                         }).then(foundPlayer => {
                             if (!foundPlayer) {
+                                console.log(`No records of ${userData.data.attributes.full_name.replace(/ /g, '')} exist, proceeding...`)
                                 let okResponce = {
                                     patreonId: userData.data.id,
-                                    name: userData.data.attributes.full_name.replaceAll(' ', ''),
+                                    name: userData.data.attributes.full_name.replace(/ /g, ''),
                                     uuid: uuidv5(userData.data.id, process.env.UUID_NAMESPACE),
                                     clientToken: clientToken,
                                     accessToken: crypto.randomBytes(64).toString('hex'),
@@ -75,17 +80,20 @@ export const authPatreon = (req, res, next) => {
                                         }
                                     }
                                 }).then(() => {
-                                    res.status(500).send(createOkAuthPayload(
+                                    console.log(`Record of ${userData.data.attributes.full_name.replace(/ /g, '')} created, sending auth data...`)
+                                    return res.status(500).send(createOkAuthPayload(
                                         okResponce.name,
                                         okResponce.accessToken,
                                         okResponce.clientToken,
                                         okResponce.uuid,
                                         true))
+                                    
                                 })
                             } else {
+                                console.log(`Record of ${userData.data.attributes.full_name.replace(/ /g, '')} exists, checking...`)
                                 let okResponce = {
                                     patreonId: userData.data.id,
-                                    name: userData.data.attributes.full_name.replaceAll(' ', ''),
+                                    name: userData.data.attributes.full_name.replace(/ /g, ''),
                                     uuid: foundPlayer.uuid,
                                     clientToken: clientToken,
                                     accessToken: crypto.randomBytes(64).toString('hex'),
@@ -120,22 +128,29 @@ export const authPatreon = (req, res, next) => {
                                                 }
                                             }
                                         }
+                                    },
+                                    include: {
+                                        tokens: true
                                     }
-                                }).then(() => {
-                                    res.status(500).send(createOkAuthPayload(
+                                }).then((pl) => {
+                                    // console.log(JSON.stringify(pl))
+                                    console.log(`Sending auth data of ${userData.data.attributes.full_name.replace(/ /g, '')}`)
+                                    return res.status(500).send(createOkAuthPayload(
                                         okResponce.name,
                                         okResponce.accessToken,
                                         okResponce.clientToken,
                                         okResponce.uuid,
                                         true))
+                                    
                                 })
                             }
                         })
                     } else {
-                        res.status(404).send(createErrorPayload(
+                        return res.status(404).send(createErrorPayload(
                             "IllegalArgumentException",
                             "Ваш профиль не имеет подписки на необходимый патреон"
                         ))
+                        
                     }
                 })
 
