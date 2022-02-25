@@ -4,7 +4,7 @@
 // ?response_type=code
 // &client_id=mZsOwgNPzP_-C3s6jpgb5Dwcjep-rnU5RDS2oWDi6rxPtgfRfs2GcOozTE1jIsF1
 // &redirect_uri=https://znkv.win/patreon-redirect
-// &state=%7B%22clientToken%22:%225f25a7d9-04c4-4048-b6e3-d0591a4698f3%22,%22requestUser%22:true%7D
+// &state=225f25a7d9-04c4-4048-b6e3-d0591a4698f
 // &scope=<optional list of requested scopes>
 
 
@@ -21,20 +21,26 @@
 // which then can be safely parsed here into json
 import express from 'express'
 import 'dotenv/config'
-import { authPatreon } from "./controllers/auth.js"
-import { authChecks, hasJoinedChecks, invalidateChecks, joinChecks, profileChecks, refreshChecks, validateChecks } from "./validators.js"
+import { validateAttributes, authChecks, hasJoinedChecks, invalidateChecks, joinChecks, profileChecks, refreshChecks, validateChecks, validateUploadTexture, validateDeleteTexture } from "./src/utils/validators.js"
 import * as fs from 'fs';
-import * as crypto from 'crypto'
-import { hasJoinedHandler, 
-    invalidateHandler, 
-    joinHandler, 
-    metaDataHandler, 
-    profileHandler, 
-    refreshHandler, 
-    signoutHandler, 
-    validateHandler } from './controllers/yggdrasil.js';
-
-
+import mongoose from "mongoose"
+import testAuth from './src/handlers/yggdrasil/testAuth.js'
+import refresh from './src/handlers/yggdrasil/refresh.js'
+import validate from './src/handlers/yggdrasil/validate.js'
+import signout from './src/handlers/yggdrasil/signOut.js'
+import invalidate from './src/handlers/yggdrasil/invalidate.js'
+import join from './src/handlers/yggdrasil/join.js'
+import hasJoined from './src/handlers/yggdrasil/hasJoined.js'
+import profile from './src/handlers/yggdrasil/profile.js'
+import { textureChecks } from './src/utils/validators.js'
+import texture from './src/handlers/texture/texture.js'
+import metaData from './src/handlers/yggdrasil/metaData.js'
+import auth from './src/handlers/yggdrasil/auth.js'
+import attributes from './src/handlers/yggdrasil/attributes.js'
+import pkg from 'morgan';
+import uploadTexture from './src/handlers/texture/uploadTexture.js';
+import deleteTexture from './src/handlers/texture/deleteTexture.js';
+const logger = pkg;
 
 console.log("Starting yet again.");
 console.log("============================================")
@@ -42,74 +48,80 @@ console.log("============================================")
 // if anything wrong, just make everything once again
 if (!fs.existsSync("./keys")) {
     console.log("No keys directory found")
-    fs.mkdirSync("./keys")
-    if (!fs.existsSync("./keys/public.pem") || !fs.existsSync("./keys/private.pem")) {
-        console.log("Private/public keys found")
-        const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
-            modulusLength: 4096,
-            publicKeyEncoding: {
-                type: 'spki',
-                format: 'pem'
-            },
-            privateKeyEncoding: {
-                type: 'pkcs8',
-                format: 'pem'
-            }
-        })
-        fs.writeFileSync("./keys/public.pem", publicKey, {
-            encoding: "utf-8"
-        })
-        fs.writeFileSync("./keys/private.pem", privateKey, {
-            encoding: "utf-8"
-        })
+    process.exit(1)
+
+} else {
+    if (!fs.existsSync("./keys/public.key") || !fs.existsSync("./keys/private.key")) {
+        console.log("No key files found, terminatig...")
+        process.exit(1)
     }
 }
-if (!fs.existsSync("./storage/textures")) { }
+// if (!fs.existsSync("./storage/textures")) { }
 
 const api_prefix = "/api/yggdrasil"
 const app = express()
 
 // apply header to every request, no matter what
-// per authlib docs
-// app.get("/*", (res, req, next) => {
-//     res.header("X-Authlib-Injector-API-Location", process.env.HOST + api_prefix)
-//     next()
-// })
+app.get("/*", (req, res, next) => {
+    res.setHeader("X-Authlib-Injector-API-Location", process.env.HOST + api_prefix)
+    next()
+})
 
-// app.post("/*", (res, req, next) => {
-//     res.header("X-Authlib-Injector-API-Location", process.env.HOST + api_prefix)
-//     next()
-// })
+app.post("/*", (req, res, next) => {
+    res.setHeader("X-Authlib-Injector-API-Location", process.env.HOST + api_prefix)
+    next()
+})
+
+mongoose.connect(process.env.DB_CONNECT, null).then(
+    () => { console.log("DB is ready for work") },
+    err => { console.log(err.message) }
+
+);
+
 
 app.set("trust proxy", true)
+app.use(express.json())
 
-app.use(express.json());
+const logs = logger('dev')
+app.use(logs)
 
 app.get("/", (req, res) => {
     res.end("you shouldnt be here, bud")
 })
 
-app.get(api_prefix, metaDataHandler)
+app.get(api_prefix, metaData)
 
-app.get(process.env.REDIRECT_PATH, authChecks, authPatreon)
+app.post(api_prefix + "/authserver/authenticate", testAuth)
 
-app.post(api_prefix + "/authserver/refresh", refreshChecks, refreshHandler)
+app.get(process.env.REDIRECT_PATH, authChecks, auth)
 
-app.post(api_prefix + "/authserver/validate", validateChecks, validateHandler)
+app.post(api_prefix + "/authserver/refresh", refreshChecks, refresh)
 
-app.post(api_prefix + "/authserver/signout", signoutHandler)
+app.post(api_prefix + "/authserver/validate", validateChecks, validate)
 
-app.post(api_prefix + "/authserver/invalidate", invalidateChecks, invalidateHandler)
+app.post(api_prefix + "/authserver/signout", signout)
 
-app.get(api_prefix + "/sessionserver/session/minecraft/join", joinChecks, joinHandler)
+app.post(api_prefix + "/authserver/invalidate", invalidateChecks, invalidate)
+
+app.post(api_prefix + "/sessionserver/session/minecraft/join", joinChecks, join)
+
+app.get("/texture/:type/:hash", textureChecks, texture)
+
+app.get(api_prefix + "/minecraftservices/player/attributes", validateAttributes, attributes)
 
 // username={username}&serverId={serverId}&ip={ip}
-app.post(api_prefix + "/sessionserver/session/minecraft/hasJoined", hasJoinedChecks, hasJoinedHandler)
+app.get(api_prefix + "/sessionserver/session/minecraft/hasJoined", hasJoinedChecks, hasJoined)
 
 // ?unsigned={unsigned}
-app.get(api_prefix + "/sessionserver/session/minecraft/profile/:uuid", profileChecks, profileHandler)
+app.get(api_prefix + "/sessionserver/session/minecraft/profile/:uuid", profileChecks, profile)
+                      
+app.put(api_prefix + "/api/user/profile/:uuid/:textureType", validateUploadTexture, uploadTexture)
+
+app.delete(api_prefix  + "/api/user/profile/:uuid/:textureType", validateDeleteTexture, deleteTexture)
 
 //app.get(process.env.REDIRECT_PATH, oAuthHandler)
+
+
 
 
 app.listen(3000);
