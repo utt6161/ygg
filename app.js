@@ -1,24 +1,3 @@
-
-// to get the code
-// www.patreon.com/oauth2/authorize/
-// ?response_type=code
-// &client_id=mZsOwgNPzP_-C3s6jpgb5Dwcjep-rnU5RDS2oWDi6rxPtgfRfs2GcOozTE1jIsF1
-// &redirect_uri=https://znkv.win/patreon-redirect
-// &state=225f25a7d9-04c4-4048-b6e3-d0591a4698f
-// &scope=<optional list of requested scopes>
-
-
-//5f25a7d9-04c4-4048-b6e3-d0591a4698f3,true
-
-// state = {
-//     clientToken: "5f25a7d9-04c4-4048-b6e3-d0591a4698f3",
-//     requestUser: true
-//   }
-// encodeURI( JSON.stringify(state))
-
-// %7B%22clientToken%22:%225f25a7d9-04c4-4048-b6e3-d0591a4698f3%22,%22requestUser%22:false%7D
-// result string: %7B%22clientToken%22:%225f25a7d9-04c4-4048-b6e3-d0591a4698f3%22,%22requestUser%22:true%7D
-// which then can be safely parsed here into json
 import express from 'express'
 import 'dotenv/config'
 import { validateAttributes, authChecks, hasJoinedChecks, invalidateChecks, joinChecks, profileChecks, refreshChecks, validateChecks, validateUploadTexture, validateDeleteTexture } from "./src/utils/validators.js"
@@ -45,18 +24,22 @@ const logger = pkg;
 console.log("Starting yet again.");
 console.log("============================================")
 
-// if anything wrong, just make everything once again
 if (!fs.existsSync("./keys")) {
     console.log("No keys directory found")
     process.exit(1)
 
 } else {
     if (!fs.existsSync("./keys/public.key") || !fs.existsSync("./keys/private.key")) {
-        console.log("No key files found, terminatig...")
+        console.log("Not all key files found, terminatig...")
         process.exit(1)
     }
 }
-// if (!fs.existsSync("./storage/textures")) { }
+
+// will suffice for now
+if (!fs.existsSync("./storage/textures/cape") || !fs.existsSync("./storage/textures/skin") ) {
+    console.log("/storage/textures/cape and /storage/textures/skin directories are required")
+    process.exit(1)
+}
 
 const api_prefix = "/api/yggdrasil"
 const app = express()
@@ -118,10 +101,5 @@ app.get(api_prefix + "/sessionserver/session/minecraft/profile/:uuid", profileCh
 app.put(api_prefix + "/api/user/profile/:uuid/:textureType", validateUploadTexture, uploadTexture)
 
 app.delete(api_prefix  + "/api/user/profile/:uuid/:textureType", validateDeleteTexture, deleteTexture)
-
-//app.get(process.env.REDIRECT_PATH, oAuthHandler)
-
-
-
 
 app.listen(3000);

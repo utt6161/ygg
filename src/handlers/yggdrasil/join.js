@@ -1,7 +1,6 @@
 import user from "../../models/user.js";
 import { validationResult } from "express-validator";
 import { createErrorPayload } from "../../utils/payloads.js";
-import moment from "moment";
 import pending from "../../models/pending.js";
 
 export default (req, res, next) => {

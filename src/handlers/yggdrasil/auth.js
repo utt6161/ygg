@@ -5,7 +5,6 @@ import { createOkAuthPayload, createErrorPayload } from "../../utils/payloads.js
 import { validationResult } from "express-validator"
 import user from '../../models/user.js';
 import whitelist from '../../models/whitelist.js';
-import moment from 'moment';
 
 const CLIENT_ID = process.env.CLIENT_ID
 const CLIENT_SECRET = process.env.CLIENT_SECRET
