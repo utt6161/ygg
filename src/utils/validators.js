@@ -197,3 +197,20 @@ export const validateDeleteTexture = [
             "invalid textureType"
         ))
 ]
+
+export const validateWhitelistOperations = 
+    query("patreonId").exists({
+        checkFalsy: true,
+        checkNull: true
+    }).withMessage(createErrorPayload(
+        "IllegalArgumentException",
+        "No patreonId provided"
+    )).bail()
+
+// we check if ip from which request was sent is allowed to do so
+export const validateIp = (req, res, next) => {
+    if (!process.env.IP_WHITELIST_ADD.split(/(, )|,/g).includes(req.ip)) {
+        return res.sendStatus(401)
+    };
+    next();
+},

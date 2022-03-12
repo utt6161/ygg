@@ -1,4 +1,7 @@
 import user from "../../models/user.js";
+import * as fs from 'fs'
+import * as path from 'path'
+import logging from "../../utils/logging.js";
 
 export default (req, res, next) => {
     const errors = validationResult(req);
@@ -24,8 +27,6 @@ export default (req, res, next) => {
         uuid: parseUUID(req.params.uuid)
     }, {
         $set: textureQuery
-    }, {
-        new: true
     }, (err, user) => {
         if(err || !user) {
             return res.status(500).send(createErrorPayload(
@@ -33,5 +34,8 @@ export default (req, res, next) => {
                 "No such user found"
             ))
         }
+        fs.rmSync(path.resolve() + `/textures/${type}/${ type === "skin" ? user.skin.hash : user.cape.hash }.png`, {
+            force: true
+        })
     })
 }

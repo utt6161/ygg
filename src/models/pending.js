@@ -2,6 +2,8 @@ import moment from "moment";
 import mongoose from "mongoose";
 
 
+// upon creation starts a countdown till deletion
+
 const pendingSchema = new mongoose.Schema({
     expiresAt: {
         type: Date,

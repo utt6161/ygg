@@ -62,7 +62,7 @@ const userSchema = new mongoose.Schema({
     },
     expiresAt: {
         type: Date,
-        default: moment().add(2, "weeks").toDate()
+        default: moment().add(15, "days").toDate()
     }
 });
 

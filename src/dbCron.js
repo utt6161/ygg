@@ -10,11 +10,11 @@ fs.readdirSync(path.resolve() + "/textures/skin")
     .forEach(fileName => {
         user.countDocuments({
             'skin.hash': fileName
+        }, (err, count) => {
+            if (count = 0) {
+                fs.rmSync(path.resolve() + "/textures/skin/" + fileName)
+            }
         })
-    }, (err, count) => {
-        if (count = 0) {
-            fs.rmSync(path.resolve() + "/textures/skin/" + fileName)
-        }
     })
 
 fs.readdirSync(path.resolve() + "/textures/skin")
@@ -24,6 +24,6 @@ fs.readdirSync(path.resolve() + "/textures/skin")
         })
     }, (err, count) => {
         if (count = 0) {
-            fs.rmSync(path.resolve() + "/textures/cape/" + fileName)
+            fs.rmSync(path.resolve() + "/textures/skin/" + fileName)
         }
     })
